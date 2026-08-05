@@ -18,7 +18,16 @@ cp .env.example .env                  # 填 OPENCODE_CWD、PROJECTS
 npm run dev                           # 启动：拉起 opencode serve + 微信登录二维码
 ```
 
-启动后用手机微信扫码登录，然后**私聊机器人**发任意消息即可配对（第一个发消息的用户会被允许，ID 会打印在日志里）。建议把该 ID 写入 `.env` 的 `ALLOW_FROM` 固化。
+启动后用手机微信扫码登录，然后**私聊机器人**发任意一条消息即可配对（第一个发消息的用户会被允许）。配对后打开 `data/paired.json` 查看你的完整用户 ID（形如 `wx1a2b3c…@im.wechat`），把它写入 `.env` 的 `ALLOW_FROM` 固化（多个用逗号分隔）。详见下方「获取微信用户 ID」。
+
+## 获取微信用户 ID
+
+`ALLOW_FROM` 填的是 iLink 分配的**不透明用户 ID**，形如 `wx1a2b3c…@im.wechat`——不是微信号、手机号或昵称。
+
+1. 启动机器人并扫码登录
+2. 用你的微信给机器人私聊发任意一条消息（首次自动配对）
+3. 打开 `data/paired.json`，里面就是你的完整用户 ID
+4. 把它写入 `.env` 的 `ALLOW_FROM`（多个用逗号分隔），重启生效
 
 ## 插件安装
 
@@ -59,7 +68,7 @@ npm run dev                           # 启动：拉起 opencode serve + 微信�
 
 | 变量 | 说明 |
 |------|------|
-| `ALLOW_FROM` | 允许使用的微信用户 ID，逗号分隔。为空时启用首次配对模式。**默认拒绝一切** |
+| `ALLOW_FROM` | 允许使用的微信用户 ID，逗号分隔（形如 `wx1a2b3c…@im.wechat`，获取方法见「获取微信用户 ID」）。为空时启用首次配对模式。**默认拒绝一切** |
 | `OPENCODE_CWD` | opencode 工作目录（机器人所有文件/命令操作都在此目录） |
 | `PROJECTS` | 可用项目列表，逗号分隔绝对路径。微信里 `/projects` 查看、`/project` 切换 |
 | `AUTO_APPROVE_PERMISSIONS` | 自动允许 opencode 工具权限请求（bash/edit 等），默认 `true`。关掉后 headless 下工具调用会挂起 |
