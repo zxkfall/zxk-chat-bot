@@ -59,6 +59,22 @@ npm run dev         # 完整启动：拉起 opencode serve + 微信扫码
 
 8. **环境标记**：`OpenCodeClient.attach()` 在 spawn 前写入 `ZXK_BOT_GATEWAY=1`、`ZXK_HOOK_PORT`、`ZXK_HOOK_TOKEN`，serve 继承后插件据此识别机器人会话。`session.idle` 事件已用于 busy 安全网（`gateway.ts`）和 `/abort` 等待（`opencode.waitSessionIdle`）。
 
+## 提交约定
+
+- 任务完成、验证通过（typecheck + cli 冒烟）后，**主动提醒用户"可以提交了"**，并简要说明改了什么
+- 不擅自提交：仅提醒，等用户明确同意才执行 `git add` / `git commit`
+- 提交信息用 **Conventional Commits** 格式，**简短英文**、祈使句、一行概括：
+  - `feat: add /current command`
+  - `fix: resolve cross-project session prompt hang`
+  - `docs: add lessons log and commit conventions`
+  - `chore: bump deps` / `refactor: extract notify hook`
+- 改动包含多个无关主题时，拆成多条提交
+
+## 经验记录
+
+- 遇到**重要教训或重大改进**时，记录到根目录 `LESSONS.md`（日期 + 一句话总结 + 现象/根因 + 修复/做法），保持追加入口简洁
+- 本文件的"关键约束"是给代理看的活文档；`LESSONS.md` 是流水账式教训日志，两者互补
+
 ## 代码风格
 
 - 无注释（除非必要），与现有代码保持一致
