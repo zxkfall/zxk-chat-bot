@@ -26,7 +26,7 @@ npm run dev         # 完整启动：拉起 opencode serve + 微信扫码
 - `src/wechat.ts` — 包装 `@wechatbot/wechatbot`：扫码登录回调、`sendTyping`、`send`、构造 Gateway
 - `src/gateway.ts` — `Gateway.handle()`：白名单/配对 → 去重 → 命令分发 → 会话消息；每用户串行锁
 - `src/opencode.ts` — `OpenCodeClient`：`createSession/deleteSession/sendText/abort/listSessions/getSessionMessages/listModels/setProject/getSessionDirectory` + 权限自动批准
-- `src/conversation.ts` — `ConversationStore`：userId ↔ opencode session 映射，JSON 持久化（`data/conversations.json`）
+- `src/conversation.ts` — `ConversationStore`：userId ↔ opencode session 映射，JSON 持久化（`data/conversations.json`）。`opencodeSessionId` 可为空串 = **未绑定**（切项目后的状态），gateway 对空 id 懒创建会话
 - `src/auth.ts` — `Auth`：`ALLOW_FROM` 白名单；为空时首次配对（`data/paired.json`）
 - `src/commands.ts` — 命令注册表（`commands: Map`），新命令加进数组即可，`/help` 自动列出
 - `src/hook.ts` — 本地 HTTP hook：插件 `wechat_notify` 工具 POST 回网关，按 `sessionID → userId` 反查转发微信（Bearer token 校验）

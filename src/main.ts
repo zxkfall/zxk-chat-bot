@@ -19,8 +19,9 @@ async function main(): Promise<void> {
   const conversations = new ConversationStore();
   conversations.load();
 
-  // 校验会话映射：session 的真实目录与记录项目不一致，或会话已不存在，则丢弃（下次懒重建）
+  // 校验会话映射：session 的真实目录与记录项目不一致，或会话已不存在，则丢弃（下次懒重建）；空 sessionId（未绑定）跳过
   for (const rec of conversations.all()) {
+    if (!rec.opencodeSessionId) continue;
     const dir = await opencode.getSessionDirectory(rec.opencodeSessionId).catch(() => undefined);
     if (!dir || dir !== rec.project) {
       log.warn(

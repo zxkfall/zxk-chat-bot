@@ -53,7 +53,7 @@ const projectsCmd: Command = {
 const projectCmd: Command = {
   name: "project",
   usage: "/project <编号>",
-  description: "切换到指定项目（重启 opencode，会话重建）",
+  description: "切换到指定项目（不自动建会话，可挑已有会话）",
   async run({ userId, args, conversations, opencode }) {
     const target = args[0];
     if (!target) return "用法: /project <编号>，用 /projects 查看列表";
@@ -67,20 +67,25 @@ const projectCmd: Command = {
     await opencode.setProject(dir);
 
     const old = conversations.get(userId);
-    if (old) {
-      await opencode.deleteSession(old.opencodeSessionId).catch(() => {});
-    }
-    const id = await opencode.createSession(`微信: ${userId}`);
     conversations.set(userId, {
       wechatUserId: userId,
-      opencodeSessionId: id,
+      opencodeSessionId: "",
       project: dir,
       model: old?.model,
       agent: old?.agent ?? config.defaultAgent,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    return `已切换到项目 ${basename(dir)}，新会话已创建。`;
+
+    const top = await topSessions(opencode, dir);
+    if (!top.length) {
+      return `已切换到项目 ${basename(dir)}（暂无会话）。发消息即可创建新会话。`;
+    }
+    return (
+      `已切换到项目 ${basename(dir)}。该项目会话：\n` +
+      formatSessions(top) +
+      `\n发消息自动创建新会话，或 /session <编号> 选择。`
+    );
   },
 };
 
@@ -144,7 +149,7 @@ const abortCmd: Command = {
   description: "中断当前正在处理的请求",
   async run({ userId, conversations, opencode }) {
     const rec = conversations.get(userId);
-    if (!rec) return "当前没有会话";
+    if (!rec || !rec.opencodeSessionId) return "当前没有会话";
     await opencode.abort(rec.opencodeSessionId);
     const idle = await opencode.waitSessionIdle(rec.opencodeSessionId, 10000);
     return idle ? "已中断（会话已停止）" : "已发送中断请求（等待超时，会话可能仍忙碌）";
@@ -157,27 +162,40 @@ function fmtTime(ts: number): string {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-async function topSessions(opencode: OpenCodeClient) {
+async function topSessions(opencode: OpenCodeClient, directory?: string) {
   const sessions = await opencode.listSessions();
-  return sessions
+  const list = directory ? sessions.filter((s) => s.directory === directory) : sessions;
+  return list
     .filter((s) => !s.parentID)
     .sort((a, b) => b.created - a.created)
     .slice(0, 10);
 }
 
+function formatSessions(
+  list: Array<{ id: string; title: string; directory: string; created: number }>,
+  showProject = false,
+): string {
+  if (!list.length) return "（无会话）";
+  return list
+    .map(
+      (s, i) =>
+        `  ${i + 1}. ${s.title || s.id}${showProject ? `  [${basename(s.directory)}]` : ""}  (${fmtTime(s.created)})`,
+    )
+    .join("\n");
+}
+
 const sessionsCmd: Command = {
   name: "sessions",
-  usage: "/sessions",
-  description: "列出当前项目的会话",
-  async run({ opencode }) {
-    const top = await topSessions(opencode);
-    if (!top.length) return "当前项目还没有会话";
-    return (
-      "会话列表（用 /session <编号> 切换）：\n" +
-      top
-        .map((s, i) => `  ${i + 1}. ${s.title || s.id}  [${basename(s.directory)}]  (${fmtTime(s.created)})`)
-        .join("\n")
-    );
+  usage: "/sessions [all]",
+  description: "列出会话（默认当前项目，all 显示全部项目）",
+  async run({ args, opencode }) {
+    const showAll = args[0]?.toLowerCase() === "all";
+    const top = await topSessions(opencode, showAll ? undefined : opencode.project);
+    if (!top.length) return showAll ? "还没有任何会话" : "当前项目还没有会话";
+    const header = showAll
+      ? "全部会话（用 /session <编号> 切换）："
+      : "当前项目会话（用 /session <编号> 切换）：";
+    return header + "\n" + formatSessions(top, showAll);
   },
 };
 
@@ -224,7 +242,7 @@ const historyCmd: Command = {
   description: "查看当前会话最近 n 条消息（默认 10）",
   async run({ userId, args, conversations, opencode }) {
     const rec = conversations.get(userId);
-    if (!rec) return "当前没有会话";
+    if (!rec || !rec.opencodeSessionId) return "当前没有会话";
     const n = args.length ? Number.parseInt(args[0], 10) : 10;
     const limit = Number.isFinite(n) && n > 0 ? Math.min(n, 50) : 10;
     const msgs = await opencode.getSessionMessages(rec.opencodeSessionId, limit);
@@ -248,16 +266,21 @@ const currentCmd: Command = {
     if (!rec) return "还没有会话，先发条消息";
 
     const project = opencode.project;
-    const session = await opencode.getSession(rec.opencodeSessionId).catch(() => undefined);
-    const status = session ? await opencode.getSessionStatus(session.id) : "unknown";
-    const lastModel = await opencode.getLastUsedModel(rec.opencodeSessionId).catch(() => undefined);
-    const model = rec.model ?? lastModel ?? "-";
+    let sessionLine = "  会话: 未创建";
+    let model = rec.model ?? "-";
+    if (rec.opencodeSessionId) {
+      const session = await opencode.getSession(rec.opencodeSessionId).catch(() => undefined);
+      const status = session ? await opencode.getSessionStatus(session.id) : "unknown";
+      const lastModel = await opencode.getLastUsedModel(rec.opencodeSessionId).catch(() => undefined);
+      model = rec.model ?? lastModel ?? "-";
+      const title = session?.title && session.title !== session.id ? session.title : undefined;
+      sessionLine = `  会话: ${rec.opencodeSessionId}${title ? `（${title}）` : ""}  状态: ${status}`;
+    }
 
-    const title = session?.title && session.title !== session.id ? session.title : undefined;
     const lines = [
       "当前状态：",
       `  项目: ${basename(project)}  (${project})`,
-      `  会话: ${rec.opencodeSessionId}${title ? `（${title}）` : ""}  状态: ${status}`,
+      sessionLine,
       `  模型: ${model}`,
       `  agent: ${rec.agent}`,
     ];

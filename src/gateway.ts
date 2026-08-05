@@ -102,9 +102,9 @@ export class Gateway {
       return;
     }
 
-    // 会话消息：无会话或项目已切换则重建
+    // 会话消息：无会话 / 未绑定 / 项目已切换则懒创建
     let rec = this.conversations.get(userId);
-    if (!rec || rec.project !== this.opencode.project) {
+    if (!rec || !rec.opencodeSessionId || rec.project !== this.opencode.project) {
       const id = await this.opencode.createSession(`微信: ${userId}`);
       const isSwitch = !!rec && rec.project !== this.opencode.project;
       rec = {
