@@ -4,6 +4,7 @@ import { commands } from "./commands.js";
 import { config } from "./config.js";
 import type { ConversationStore } from "./conversation.js";
 import { tidyMarkdown } from "./format.js";
+import { log, shortId } from "./log.js";
 import type { OpenCodeClient } from "./opencode.js";
 
 export interface Messenger {
@@ -29,7 +30,7 @@ export class Gateway {
     this.opencode.onSessionIdle((sessionID) => {
       const rec = this.conversations.findBySessionId(sessionID);
       if (rec && this.busy.has(rec.wechatUserId)) {
-        this.messenger.log(`[gateway] 会话 ${sessionID} 已空闲，释放 busy 锁`);
+        this.messenger.log(`会话 ${sessionID} 已空闲，释放 busy 锁`);
         this.busy.delete(rec.wechatUserId);
       }
     });
@@ -39,7 +40,7 @@ export class Gateway {
     const userId = msg.userId;
     const prev = this.locks.get(userId) ?? Promise.resolve();
     const next = prev.then(() => this.handleLocked(msg)).catch((e) => {
-      console.error("[gateway] 处理异常:", e);
+      log.error("gateway", `处理异常: ${e instanceof Error ? e.message : String(e)}`);
     });
     this.locks.set(userId, next);
     next.finally(() => {
@@ -54,11 +55,9 @@ export class Gateway {
     // 白名单 / 首次配对
     if (!this.auth.isAllowed(userId)) {
       if (this.auth.pair(userId)) {
-        this.messenger.log(
-          `[auth] 已配对用户 ${userId}（可写入 ALLOW_FROM 固化）`,
-        );
+        this.messenger.log(`已配对用户 ${shortId(userId)}（可写入 ALLOW_FROM 固化）`);
       } else {
-        this.messenger.log(`[auth] 忽略非白名单用户 ${userId}`);
+        this.messenger.log(`忽略非白名单用户 ${shortId(userId)}`);
         return;
       }
     }
@@ -69,7 +68,7 @@ export class Gateway {
       : `${userId}:${msg.text}:${msg.timestamp.getTime()}`;
     const now = Date.now();
     if (this.isDuplicate(dedupKey, now)) {
-      this.messenger.log(`[gateway] 去重跳过消息 ${dedupKey}`);
+      this.messenger.log(`去重跳过消息 ${shortId(dedupKey)}`);
       return;
     }
 

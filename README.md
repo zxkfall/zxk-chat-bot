@@ -69,6 +69,17 @@ npm run dev                           # 启动：拉起 opencode serve + 微信�
 | `WECHAT_STORAGE_DIR` | 微信登录凭据存储目录，默认 `./data/wechat` |
 | `HOOK_PORT` | 本地通知 hook 端口（wechat_notify 工具用），默认 `19890` |
 | `HOOK_TOKEN` | hook 鉴权 token，不填则每次启动随机生成 |
+| `LOG_LEVEL` | 日志级别：`debug` \| `info` \| `warn` \| `error`，默认 `info` |
+| `LOG_DIR` | 日志目录，默认 `data/logs`，按天轮转 `bot-YYYYMMDD.log` |
+
+## 日志
+
+运行日志同时输出到终端并写入 `data/logs/bot-YYYYMMDD.log`（按天轮转，含微信 SDK 协议日志；不打印 token/凭据，微信 userId 截断）。
+
+```bash
+npm run logs        # 实时 tail 当天日志
+tail -f data/logs/bot-$(date +%Y%m%d).log
+```
 
 ## 架构
 
@@ -116,6 +127,7 @@ npm run typecheck         # tsc --noEmit
 npm run ping              # 直接测 OpenCodeClient（建会话 + 发消息）
 npm run cli               # 终端里用假微信用户测全部命令
 npm run plugins:install   # 安装插件（--global / --project <dir> 变体）
+npm run logs              # 实时查看运行日志
 npm run dev               # 完整启动（真实微信）
 ```
 

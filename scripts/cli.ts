@@ -3,6 +3,7 @@ import { Auth } from "../src/auth.js";
 import { ConversationStore } from "../src/conversation.js";
 import { Gateway } from "../src/gateway.js";
 import { startNotifyHook } from "../src/hook.js";
+import { log } from "../src/log.js";
 import { OpenCodeClient } from "../src/opencode.js";
 
 async function main(): Promise<void> {
@@ -17,7 +18,7 @@ async function main(): Promise<void> {
   const hook = startNotifyHook(conversations, async (_userId, text) => {
     console.log(`\n[notify] ${text}\n`);
   });
-  console.log(`[cli] 通知 hook 已启动 127.0.0.1:${hook.port}`);
+  log.info("cli", `通知 hook 已启动 127.0.0.1:${hook.port}`);
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const messenger = {
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
     reply: async (_userId: string, text: string) => {
       console.log(`\n[bot]\n${text}\n`);
     },
-    log: (l: string) => console.log(l),
+    log: (line: string) => log.info("gateway", line),
   };
   const gateway = new Gateway(opencode, conversations, auth, messenger);
 
@@ -60,7 +61,7 @@ async function main(): Promise<void> {
     pending++;
     gateway
       .handle(fakeMsg(t))
-      .catch((e) => console.error("[cli] 异常:", e))
+      .catch((e) => log.error("cli", `异常: ${e instanceof Error ? e.message : String(e)}`))
       .finally(() => {
         pending--;
         maybeExit();
@@ -73,6 +74,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e) => {
-  console.error(e);
+  log.error("cli", `启动失败: ${e instanceof Error ? e.message : String(e)}`);
   process.exit(1);
 });

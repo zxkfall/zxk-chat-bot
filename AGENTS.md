@@ -30,6 +30,7 @@ npm run dev         # 完整启动：拉起 opencode serve + 微信扫码
 - `src/auth.ts` — `Auth`：`ALLOW_FROM` 白名单；为空时首次配对（`data/paired.json`）
 - `src/commands.ts` — 命令注册表（`commands: Map`），新命令加进数组即可，`/help` 自动列出
 - `src/hook.ts` — 本地 HTTP hook：插件 `wechat_notify` 工具 POST 回网关，按 `sessionID → userId` 反查转发微信（Bearer token 校验）
+- `src/log.ts` — 日志模块：`log.info/warn/error/debug(module, msg)` 同时输出终端并写 `data/logs/bot-YYYYMMDD.log`（按天轮转）；`shortId()` 截断微信 userId；`fileTransport` 把微信 SDK 协议日志接入同一 sink
 - `src/format.ts` — Markdown 空行折叠
 
 全局插件（`~/.config/opencode/plugins/`，不进本仓库）：
@@ -79,4 +80,5 @@ npm run dev         # 完整启动：拉起 opencode serve + 微信扫码
 
 - 无注释（除非必要），与现有代码保持一致
 - ESM：相对导入必须带 `.js` 后缀（`import ... from "./config.js"`）
+- 日志一律用 `src/log.ts` 的 `log` 模块（`log.info(module, msg)`），**不要用 `console.log`**；微信 userId 用 `shortId()` 截断；`config.ts` 例外（它不能被 log 引用，避免循环依赖，启动警告用 `console.warn`）
 - 改动后跑 `npm run typecheck`，并用 `npm run cli` 做冒烟验证

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { config } from "./config.js";
+import { log } from "./log.js";
 
 const file = resolve(config.dataDir, "paired.json");
 
@@ -12,7 +13,7 @@ export class Auth {
     try {
       this.paired = new Set(JSON.parse(readFileSync(file, "utf8")) as string[]);
     } catch (e) {
-      console.error("[auth] 读取配对数据失败:", e);
+      log.error("auth", `读取配对数据失败: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

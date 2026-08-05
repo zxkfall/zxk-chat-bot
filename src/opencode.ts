@@ -4,6 +4,7 @@ import {
   type OpencodeClient,
 } from "@opencode-ai/sdk";
 import { config } from "./config.js";
+import { log } from "./log.js";
 
 export interface OpenCodeModel {
   id: string;
@@ -101,8 +102,9 @@ export class OpenCodeClient {
       if (Array.isArray(sessions.data)) {
         this.client = existing;
         this.ownsServer = false;
-        console.log(
-          `[opencode] 复用已有服务 http://127.0.0.1:${config.opencodePort}（当前目录 ${process.cwd()}）`,
+        log.info(
+          `opencode`,
+          `复用已有服务 http://127.0.0.1:${config.opencodePort}（当前目录 ${process.cwd()}）`,
         );
         this.startEventLoop();
         return;
@@ -115,7 +117,7 @@ export class OpenCodeClient {
     this.server = server;
     this.ownsServer = true;
     this.client = createOpencodeClient({ baseUrl: server.url, headers });
-    console.log(`[opencode] 已启动服务 ${server.url}，项目 ${dir}`);
+    log.info("opencode", `已启动服务 ${server.url}，项目 ${dir}`);
 
     this.startEventLoop();
   }
@@ -139,9 +141,9 @@ export class OpenCodeClient {
                 path: { id: p.sessionID, permissionID: p.id },
                 body: { response: "always" },
               });
-              console.log(`[opencode] 已自动允许权限: ${p.title ?? p.id}`);
+              log.info("opencode", `已自动允许权限: ${p.title ?? p.id}`);
             } catch (e) {
-              console.error("[opencode] 自动允许权限失败:", e);
+              log.error("opencode", `自动允许权限失败: ${e instanceof Error ? e.message : String(e)}`);
             }
           } else if (type === "session.idle") {
             const sid = (event.properties as { sessionID?: string })?.sessionID;
@@ -164,9 +166,9 @@ export class OpenCodeClient {
             }
           }
         }
-      })().catch((e) => console.error("[opencode] 事件流中断:", e));
+      })().catch((e) => log.error("opencode", `事件流中断: ${e instanceof Error ? e.message : String(e)}`));
     } catch (e) {
-      console.warn("[opencode] 订阅事件失败:", e);
+      log.warn("opencode", `订阅事件失败: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

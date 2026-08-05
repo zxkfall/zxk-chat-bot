@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { config } from "./config.js";
+import { log } from "./log.js";
 
 export interface ConversationRecord {
   wechatUserId: string;
@@ -28,7 +29,7 @@ export class ConversationStore {
         if (v?.opencodeSessionId) this.records.set(k, v);
       }
     } catch (e) {
-      console.error("[conversation] 读取持久化数据失败:", e);
+      log.error("conversation", `读取持久化数据失败: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

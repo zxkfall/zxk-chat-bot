@@ -37,6 +37,8 @@ export const config = {
   autoApprove: str("AUTO_APPROVE_PERMISSIONS", "true") !== "false",
   hookPort: int("HOOK_PORT", 19890),
   hookToken: str("HOOK_TOKEN") || randomBytes(16).toString("hex"),
+  logLevel: str("LOG_LEVEL", "info"),
+  logDir: resolve(".", str("LOG_DIR", "data/logs")),
 };
 
 if (!config.opencodeCwd) {
