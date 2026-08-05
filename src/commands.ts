@@ -202,11 +202,11 @@ const sessionsCmd: Command = {
 const sessionCmd: Command = {
   name: "session",
   usage: "/session <编号>",
-  description: "切换到指定会话继续对话（跨项目会自动切项目）",
+  description: "切换到当前项目的指定会话继续对话",
   async run({ userId, args, conversations, opencode }) {
     const target = args[0];
     if (!target) return "用法: /session <编号>，用 /sessions 查看列表";
-    const top = await topSessions(opencode);
+    const top = await topSessions(opencode, opencode.project);
     const idx = Number.parseInt(target, 10);
     const found = Number.isFinite(idx) && idx >= 1 && idx <= top.length
       ? top[idx - 1]

@@ -56,7 +56,7 @@ npm run dev                           # 启动：拉起 opencode serve + 微信�
 | `/projects` | 列出可用项目 |
 | `/project <编号>` | 切换项目（列出该项目会话，可挑选续聊或发消息新建） |
 | `/sessions [all]` | 列出会话（默认当前项目，`all` 显示全部项目） |
-| `/session <编号>` | 切换到指定会话继续对话（跨项目自动切项目） |
+| `/session <编号>` | 切换到当前项目的指定会话继续对话 |
 | `/history [n]` | 查看当前会话最近 n 条消息（默认 10） |
 | `/model [provider/model]` | 查看或切换模型 |
 | `/agent build\|plan` | 切换 agent |
