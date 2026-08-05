@@ -25,6 +25,7 @@ export class OpenCodeClient {
   private _project = "";
   private idleWaiters = new Map<string, () => void>();
   private onSessionIdleCb?: (sessionID: string) => void;
+  private sessionStatuses = new Map<string, "busy" | "idle" | "retry">();
 
   get project(): string {
     return this._project || config.opencodeCwd;
@@ -83,6 +84,7 @@ export class OpenCodeClient {
   private async attach(dir: string): Promise<void> {
     process.chdir(dir);
     this._project = dir;
+    this.sessionStatuses.clear();
     const headers = authHeaders();
 
     // 环境标记：让 opencode 插件识别"这是机器人 spawn 的 serve"（安全插件按此放行/拦截）
@@ -144,12 +146,22 @@ export class OpenCodeClient {
           } else if (type === "session.idle") {
             const sid = (event.properties as { sessionID?: string })?.sessionID;
             if (!sid) continue;
+            this.sessionStatuses.set(sid, "idle");
             const w = this.idleWaiters.get(sid);
             if (w) {
               this.idleWaiters.delete(sid);
               w();
             }
             this.onSessionIdleCb?.(sid);
+          } else if (type === "session.status") {
+            const p = event.properties as {
+              sessionID?: string;
+              status?: { type?: string };
+            };
+            const t = p?.status?.type;
+            if (p?.sessionID && (t === "busy" || t === "idle" || t === "retry")) {
+              this.sessionStatuses.set(p.sessionID, t);
+            }
           }
         }
       })().catch((e) => console.error("[opencode] 事件流中断:", e));
@@ -227,6 +239,24 @@ export class OpenCodeClient {
     return res.data?.directory;
   }
 
+  async getSession(
+    sessionId: string,
+  ): Promise<{ id: string; title: string; directory: string; created: number; updated: number } | undefined> {
+    const res = await this.requireClient().session.get({ path: { id: sessionId } });
+    if (!res.data) return undefined;
+    return {
+      id: res.data.id,
+      title: res.data.title,
+      directory: res.data.directory,
+      created: res.data.time?.created ?? 0,
+      updated: res.data.time?.updated ?? 0,
+    };
+  }
+
+  async getSessionStatus(sessionId: string): Promise<"idle" | "busy" | "retry" | "unknown"> {
+    return this.sessionStatuses.get(sessionId) ?? "unknown";
+  }
+
   async getSessionMessages(
     sessionId: string,
     limit: number,
@@ -245,6 +275,18 @@ export class OpenCodeClient {
       if (text) out.push({ role, text });
     }
     return out.slice(-limit);
+  }
+
+  async getLastUsedModel(sessionId: string): Promise<string | undefined> {
+    const res = await this.requireClient().session.messages({ path: { id: sessionId } });
+    const list = res.data ?? [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const info = list[i]?.info;
+      if (info?.role === "assistant" && info.modelID) {
+        return `${info.providerID}/${info.modelID}`;
+      }
+    }
+    return undefined;
   }
 
   async listModels(): Promise<OpenCodeModel[]> {

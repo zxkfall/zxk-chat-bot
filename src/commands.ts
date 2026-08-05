@@ -239,6 +239,32 @@ const historyCmd: Command = {
   },
 };
 
+const currentCmd: Command = {
+  name: "current",
+  usage: "/current",
+  description: "显示当前项目/会话/模型/agent 状态",
+  async run({ userId, conversations, opencode }) {
+    const rec = conversations.get(userId);
+    if (!rec) return "还没有会话，先发条消息";
+
+    const project = opencode.project;
+    const session = await opencode.getSession(rec.opencodeSessionId).catch(() => undefined);
+    const status = session ? await opencode.getSessionStatus(session.id) : "unknown";
+    const lastModel = await opencode.getLastUsedModel(rec.opencodeSessionId).catch(() => undefined);
+    const model = rec.model ?? lastModel ?? "-";
+
+    const title = session?.title && session.title !== session.id ? session.title : undefined;
+    const lines = [
+      "当前状态：",
+      `  项目: ${basename(project)}  (${project})`,
+      `  会话: ${rec.opencodeSessionId}${title ? `（${title}）` : ""}  状态: ${status}`,
+      `  模型: ${model}`,
+      `  agent: ${rec.agent}`,
+    ];
+    return lines.join("\n");
+  },
+};
+
 const helpCmd: Command = {
   name: "help",
   usage: "/help",
@@ -261,6 +287,7 @@ export const commands = new Map<string, Command>(
     sessionsCmd,
     sessionCmd,
     historyCmd,
+    currentCmd,
     modelCmd,
     agentCmd,
     abortCmd,
