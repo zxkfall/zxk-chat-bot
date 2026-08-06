@@ -161,6 +161,8 @@ npm version patch        # 升版本 + 自动提交 + 打 v0.x.x tag
 git push --follow-tags   # 推代码和 tag → GitHub Actions 自动发布到 npm
 ```
 
+> **遇到问题？** CI 发布 404 等排查见 [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md)。常见坑：Trusted Publishing 要求 npm ≥ 11.5.1（workflow 已内置 publish 前 `npm install -g npm@latest`）。
+
 ### 使用者
 
 ```bash
