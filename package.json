@@ -10,6 +10,7 @@
     "dev": "tsx src/main.ts",
     "ping": "tsx scripts/ping.ts",
     "cli": "tsx scripts/cli.ts",
+    "cli:test": "DATA_DIR=.test-data tsx scripts/cli.ts",
     "plugins:install": "tsx scripts/install-plugins.ts",
     "plugins:uninstall": "tsx scripts/install-plugins.ts --remove",
     "logs": "bash -c 'tail -f data/logs/bot-$(date +%Y%m%d).log'",

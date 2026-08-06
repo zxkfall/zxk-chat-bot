@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 try {
   process.loadEnvFile(".env");
@@ -25,20 +25,23 @@ function list(name: string): string[] {
     .filter(Boolean);
 }
 
+// data 根目录：可用 DATA_DIR 覆盖（如测试隔离），默认 ./data
+const dataDir = resolve(".", str("DATA_DIR", "data"));
+
 export const config = {
   botName: str("BOT_NAME", "ZXK Bot"),
   allowFrom: new Set(list("ALLOW_FROM")),
   opencodeCwd: str("OPENCODE_CWD"),
   opencodePort: int("OPENCODE_PORT", 4096),
   defaultAgent: str("DEFAULT_AGENT", "build") as "build" | "plan",
-  wechatStorageDir: resolve(".", str("WECHAT_STORAGE_DIR", "./data/wechat")),
-  dataDir: resolve(".", "data"),
+  wechatStorageDir: resolve(".", str("WECHAT_STORAGE_DIR", join(dataDir, "wechat"))),
+  dataDir,
   projects: list("PROJECTS"),
   autoApprove: str("AUTO_APPROVE_PERMISSIONS", "true") !== "false",
   hookPort: int("HOOK_PORT", 19890),
   hookToken: str("HOOK_TOKEN") || randomBytes(16).toString("hex"),
   logLevel: str("LOG_LEVEL", "info"),
-  logDir: resolve(".", str("LOG_DIR", "data/logs")),
+  logDir: resolve(".", str("LOG_DIR", join(dataDir, "logs"))),
 };
 
 if (!config.opencodeCwd) {

@@ -134,7 +134,8 @@ scripts/
 ```bash
 npm run typecheck         # tsc --noEmit
 npm run ping              # 直接测 OpenCodeClient（建会话 + 发消息）
-npm run cli               # 终端里用假微信用户测全部命令
+npm run cli               # 终端里用假微信用户测全部命令（用真实 data/）
+npm run cli:test          # 同上，但数据隔离到 .test-data/（测试专用，不碰真实 data/）
 npm run plugins:install   # 安装插件（--global / --project <dir> 变体）
 npm run logs              # 实时查看运行日志
 npm run dev               # 完整启动（真实微信）

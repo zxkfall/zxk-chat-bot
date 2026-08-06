@@ -14,10 +14,13 @@
 npm run typecheck   # tsc --noEmit，改动后必须跑
 npm run ping        # 直接测 OpenCodeClient（建会话 + 发消息），验证 SDK 链路
 npm run cli         # 终端假 adapter，测 gateway/命令（stdin 输入，stdout 看回复）
+npm run cli:test    # 同上，但数据目录隔离到 .test-data/，测试专用
 npm run dev         # 完整启动：拉起 opencode serve + 微信扫码
 ```
 
-验证新功能：优先用 `npm run cli` 管道输入命令，例如 `printf '/sessions\n' | npm run cli`。
+验证新功能：优先用 `npm run cli:test` 管道输入命令，例如 `printf '/sessions\n' | npm run cli:test`。
+
+**⚠️ 严禁 `rm -rf data/`**：`data/wechat` 是真实微信登录凭据（虽 gitignore 但不代表可以删）。测试隔离用 `cli:test`（`DATA_DIR=.test-data`），只清理 `.test-data/`。
 
 ## 目录职责
 
