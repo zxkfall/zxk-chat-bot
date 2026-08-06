@@ -12,6 +12,7 @@
 
 ```bash
 npm run typecheck   # tsc --noEmit，改动后必须跑
+npm run build       # tsc 编译到 dist/（npm CLI/发布用）
 npm run ping        # 直接测 OpenCodeClient（建会话 + 发消息），验证 SDK 链路
 npm run cli         # 终端假 adapter，测 gateway/命令（stdin 输入，stdout 看回复）
 npm run cli:test    # 同上，但数据目录隔离到 .test-data/，测试专用
@@ -25,7 +26,7 @@ npm run dev         # 完整启动：拉起 opencode serve + 微信扫码
 ## 目录职责
 
 - `src/main.ts` — 入口：`OpenCodeClient.start()` → 会话映射校验 → 启动微信 adapter
-- `src/config.ts` — 读 `.env`，导出 `config`；**import 时就用 `resolve(".", ...)` 定成绝对路径**
+- `src/config.ts` — 读 `.env`，导出 `config`；**import 时就用 `resolve(".", ...)` 定成绝对路径**；配置定位：`ZXK_CONFIG_DIR` → 仓库 `.env`（本地）→ `~/.config/zxk-chat-bot/`（全局 CLI）。`OPENCODE_CWD` 未配置时不在这里抛错，由 `OpenCodeClient.start()` 校验
 - `src/wechat.ts` — 包装 `@wechatbot/wechatbot`：扫码登录回调、`sendTyping`、`send`、构造 Gateway
 - `src/gateway.ts` — `Gateway.handle()`：白名单/配对 → 去重 → 命令分发 → 会话消息；每用户串行锁
 - `src/opencode.ts` — `OpenCodeClient`：`createSession/deleteSession/sendText/abort/listSessions/getSessionMessages/listModels/setProject/getSessionDirectory` + 权限自动批准
@@ -34,6 +35,8 @@ npm run dev         # 完整启动：拉起 opencode serve + 微信扫码
 - `src/commands.ts` — 命令注册表（`commands: Map`），新命令加进数组即可，`/help` 自动列出
 - `src/hook.ts` — 本地 HTTP hook：插件 `wechat_notify` 工具 POST 回网关，按 `sessionID → userId` 反查转发微信（Bearer token 校验）
 - `src/log.ts` — 日志模块：`log.info/warn/error/debug(module, msg)` 同时输出终端并写 `data/logs/bot-YYYYMMDD.log`（按天轮转）；`shortId()` 截断微信 userId；`fileTransport` 把微信 SDK 协议日志接入同一 sink
+- `src/plugins.ts` — 插件安装/卸载逻辑（`installPlugins`/`uninstallPlugins`），源码目录按 `import.meta.url` 解析（编译后 `dist/../plugins` 即包内 plugins/）
+- `src/cli.ts` — npm CLI 入口 `zxk-chat`：`setup/start/status/logs/plugins:install/plugins:uninstall/uninstall/ping`；`#!` shebang + tsc 编译保留
 - `src/format.ts` — Markdown 空行折叠
 
 全局插件（`~/.config/opencode/plugins/`，不进本仓库）：

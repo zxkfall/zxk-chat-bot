@@ -119,19 +119,56 @@ src/
 ├── hook.ts         本地 HTTP hook：wechat_notify 工具回调转发微信
 ├── commands.ts     /new /clear /projects /project /sessions /session /history /model /agent /abort /help
 ├── opencode.ts     OpenCodeClient：session/project/prompt/abort/models + 权限自动批准 + session.idle 事件
+├── plugins.ts      插件安装/卸载逻辑（installPlugins/uninstallPlugins）
+├── cli.ts          npm CLI 入口（zxk-chat）：setup/start/status/logs/plugins/uninstall/ping
 └── format.ts       Markdown 整理（空行折叠）
 plugins/
 ├── block-secrets.ts   安全插件（仅机器人会话生效）
 └── wechat-notify.ts   wechat_notify 工具
 scripts/
-├── ping.ts         OpenCode SDK 连通性测试（npm run ping）
-├── cli.ts          CLI 假 adapter，终端里测命令（npm run cli）
-└── install-plugins.ts  插件安装/卸载（npm run plugins:install / uninstall）
+├── ping.ts             OpenCode SDK 连通性测试（npm run ping）
+├── cli.ts              CLI 假 adapter，终端里测命令（npm run cli）
+├── install-plugins.ts  插件安装/卸载（npm run plugins:install / uninstall）
+└── npm-uninstall.mjs   npm uninstall 生命周期：清 opencode 插件（不动配置/凭据）
 ```
+
+## 作为 npm CLI 发布（zxk-chat）
+
+`src/cli.ts` 是编译后的 CLI 入口（`npm run build` → `dist/cli.js`），提供 `zxk-chat` 命令。配置/数据默认存 `~/.config/zxk-chat-bot/`（可用 `ZXK_CONFIG_DIR` 覆盖）。
+
+### 发布
+
+```bash
+npm login
+npm version patch     # 升版本
+npm publish           # 包名 zxk-chat-bot
+```
+
+### 使用者
+
+```bash
+# 前置：Node ≥ 22 + opencode（curl -fsSL https://opencode.ai/install.sh | bash）
+npm install -g zxk-chat-bot
+
+zxk-chat setup              # 向导：工作目录/项目/白名单 + 微信扫码 → 写配置
+zxk-chat plugins:install    # 装 opencode 插件（默认全局；--project <dir> 指定项目级）
+zxk-chat start              # 前台启动
+zxk-chat status / logs      # 状态 / 日志
+```
+
+### 卸载（两层）
+
+```bash
+zxk-chat uninstall          # 清 opencode 插件 + y/N 确认删 ~/.config/zxk-chat-bot/（配置/凭据/会话映射）
+npm uninstall -g zxk-chat-bot  # 删 npm 包本体（自动触发 uninstall 脚本，顺带清插件残留）
+```
+
+> npm 的 `uninstall` 生命周期脚本只删复制出去的插件文件，**不碰配置/登录凭据**——因为 npm 升级版本时也会触发它，删数据会导致每次升级清空配置。
 
 ## 开发
 
 ```bash
+npm run build             # tsc 编译到 dist/（发布/CLI 用）
 npm run typecheck         # tsc --noEmit
 npm run ping              # 直接测 OpenCodeClient（建会话 + 发消息）
 npm run cli               # 终端里用假微信用户测全部命令（用真实 data/）

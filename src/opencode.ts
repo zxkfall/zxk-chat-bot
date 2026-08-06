@@ -33,6 +33,9 @@ export class OpenCodeClient {
   }
 
   async start(): Promise<void> {
+    if (!config.opencodeCwd) {
+      throw new Error("OPENCODE_CWD 未配置：请先运行 zxk-chat setup 或填写 .env 的 OPENCODE_CWD");
+    }
     await this.attach(config.opencodeCwd);
   }
 

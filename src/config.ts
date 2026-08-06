@@ -1,11 +1,34 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
-try {
-  process.loadEnvFile(".env");
-} catch {
-  // .env 不存在时使用默认值
+const DEFAULT_CONFIG_DIR = join(homedir(), ".config", "zxk-chat-bot");
+
+// 配置定位：
+//  1) ZXK_CONFIG_DIR 显式指定
+//  2) 仓库/当前目录有 .env → 本地模式（cwd 相对，兼容 npm run dev）
+//  3) 否则用全局默认 ~/.config/zxk-chat-bot/
+function resolveConfigDir(): string {
+  if (process.env.ZXK_CONFIG_DIR) return resolve(process.env.ZXK_CONFIG_DIR);
+  if (existsSync(resolve(".", ".env"))) return ".";
+  return DEFAULT_CONFIG_DIR;
+}
+
+const configDir = resolveConfigDir();
+
+if (configDir === ".") {
+  try {
+    process.loadEnvFile(".env");
+  } catch {
+    // 无 .env 用默认值
+  }
+} else {
+  try {
+    process.loadEnvFile(join(configDir, ".env"));
+  } catch {
+    // 未配置过，用默认值
+  }
 }
 
 function str(name: string, fallback = ""): string {
@@ -25,10 +48,11 @@ function list(name: string): string[] {
     .filter(Boolean);
 }
 
-// data 根目录：可用 DATA_DIR 覆盖（如测试隔离），默认 ./data
-const dataDir = resolve(".", str("DATA_DIR", "data"));
+// data 根目录：可用 DATA_DIR 覆盖（如测试隔离），否则跟随 configDir
+const dataDir = resolve(configDir === "." ? "." : configDir, str("DATA_DIR", "data"));
 
 export const config = {
+  configDir: configDir === "." ? process.cwd() : configDir,
   botName: str("BOT_NAME", "ZXK Bot"),
   allowFrom: new Set(list("ALLOW_FROM")),
   opencodeCwd: str("OPENCODE_CWD"),
@@ -44,9 +68,8 @@ export const config = {
   logDir: resolve(".", str("LOG_DIR", join(dataDir, "logs"))),
 };
 
-if (!config.opencodeCwd) {
-  throw new Error("OPENCODE_CWD 未配置：请在 .env 中指定 opencode 工作目录");
-}
+// OPENCODE_CWD 未配置时不在 import 期抛错（setup/uninstall/status 等命令可能不需要它），
+// 由 OpenCodeClient.start() 在使用时校验并给出明确提示。
 
 if (config.projects.length === 0) {
   config.projects.push(config.opencodeCwd);

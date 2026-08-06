@@ -1,8 +1,16 @@
 {
-  "name": "zxk-chatbot",
+  "name": "zxk-chat-bot",
   "version": "0.1.0",
-  "private": true,
+  "description": "微信 ↔ OpenCode 控制网关：个人微信私聊机器人，远程控制 opencode 处理任务、切换项目/会话",
   "type": "module",
+  "bin": {
+    "zxk-chat": "dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "plugins/",
+    "scripts/npm-uninstall.mjs"
+  ],
   "engines": {
     "node": ">=22"
   },
@@ -14,9 +22,13 @@
     "plugins:install": "tsx scripts/install-plugins.ts",
     "plugins:uninstall": "tsx scripts/install-plugins.ts --remove",
     "logs": "bash -c 'tail -f data/logs/bot-$(date +%Y%m%d).log'",
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
+    "prepublishOnly": "npm run build && npm run typecheck",
+    "uninstall": "node scripts/npm-uninstall.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
     "@opencode-ai/sdk": "^1.18.13",
     "@wechatbot/wechatbot": "^2.2.0",
     "qrcode-terminal": "^0.12.0"
@@ -26,5 +38,13 @@
     "@types/qrcode-terminal": "^0.12.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
-  }
+  },
+  "keywords": [
+    "wechat",
+    "opencode",
+    "ai",
+    "gateway",
+    "bot"
+  ],
+  "license": "MIT"
 }
