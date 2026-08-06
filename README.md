@@ -138,10 +138,27 @@ scripts/
 
 ### 发布
 
+包发布走 **npm Trusted Publishing**（GitHub Actions 用 OIDC 认证，无需在 GitHub 存 token）。仓库已配好 `.github/workflows/publish.yml`：推送 `v*` tag 时自动 `npm publish --provenance`。
+
+**① 首次发布**（创建 npm 包，需要一次本地登录）：
+
 ```bash
-npm login
-npm version patch     # 升版本
-npm publish           # 包名 zxk-chat-bot
+npm whoami            # 确认已登录（未登录先 npm login）
+npm publish           # 发布当前版本（自动跑 build + typecheck）
+```
+
+**② 一次性配置 Trusted Publishing**（npm 网页操作）：
+
+npmjs.com → 包 `zxk-chat-bot` → **Settings → Trusted Publishing** → Add source：
+- Provider: `GitHub Actions`
+- Owner / Repository: 你的 GitHub 用户名和仓库名（如 `<用户名>/zxk-chat-bot`）
+- Workflow: `publish.yml`
+
+**③ 日常发版**（从此全自动，不用手动 npm publish）：
+
+```bash
+npm version patch        # 升版本 + 自动提交 + 打 v0.x.x tag
+git push --follow-tags   # 推代码和 tag → GitHub Actions 自动发布到 npm
 ```
 
 ### 使用者
