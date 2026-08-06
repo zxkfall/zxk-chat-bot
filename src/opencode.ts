@@ -208,13 +208,44 @@ export class OpenCodeClient {
       throw new Error(res.error ? JSON.stringify(res.error) : "调用失败");
     }
 
-    const texts: string[] = [];
-    for (const part of res.data.parts ?? []) {
-      if (part.type === "text") {
-        const p = part as { text: string; synthetic?: boolean };
-        if (!p.synthetic && p.text) texts.push(p.text);
+    // session.prompt 只返回最后一个 assistant 消息的 parts。
+    // 工具调用回合会拆成多条 assistant 消息，前面的正文/总结在更早的消息里，
+    // 所以再取一次 messages，聚合"最后一条 user 消息之后"所有 assistant 的 text。
+    const finish = res.data.info?.finish ?? "unknown";
+    const msgsRes = await this.requireClient().session.messages({ path: { id: sessionId } });
+    const msgs = msgsRes.data ?? [];
+
+    let startIdx = -1;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i]?.info?.role === "user") {
+        startIdx = i;
+        break;
       }
     }
+    const begin = startIdx >= 0 ? startIdx + 1 : Math.max(0, msgs.length - 1);
+
+    const texts: string[] = [];
+    for (let i = begin; i < msgs.length; i++) {
+      const info = msgs[i]?.info;
+      if (info?.role !== "assistant") continue;
+      for (const part of msgs[i]?.parts ?? []) {
+        if (part.type === "text") {
+          const p = part as { text: string; synthetic?: boolean };
+          if (!p.synthetic && p.text) texts.push(p.text);
+        }
+      }
+    }
+    if (texts.length === 0) {
+      for (const part of res.data.parts ?? []) {
+        if (part.type === "text") {
+          const p = part as { text: string; synthetic?: boolean };
+          if (!p.synthetic && p.text) texts.push(p.text);
+        }
+      }
+    }
+
+    const chars = texts.reduce((n, t) => n + t.length, 0);
+    log.info("opencode", `回复完成: finish=${finish} 文本${texts.length}段/${chars}字`);
     return texts;
   }
 
