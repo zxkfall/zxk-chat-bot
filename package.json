@@ -1,6 +1,6 @@
 {
   "name": "zxk-chat-bot",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "微信 ↔ OpenCode 控制网关：个人微信私聊机器人，远程控制 opencode 处理任务、切换项目/会话",
   "type": "module",
   "bin": {
