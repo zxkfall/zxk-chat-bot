@@ -1,7 +1,7 @@
 {
   "name": "zxk-chat-bot",
   "version": "0.1.2",
-  "description": "微信 ↔ OpenCode 控制网关：个人微信私聊机器人，远程控制 opencode 处理任务、切换项目/会话",
+  "description": "Control OpenCode from WeChat — a personal WeChat chatbot gateway (CLI). 微信远程控制 opencode 的 AI 机器人网关",
   "type": "module",
   "bin": {
     "zxk-chat": "dist/cli.js"
@@ -41,10 +41,17 @@
   },
   "keywords": [
     "wechat",
+    "wechat-bot",
+    "chatbot",
     "opencode",
+    "llm",
     "ai",
     "gateway",
-    "bot"
+    "cli",
+    "remote-control",
+    "iLink",
+    "微信",
+    "机器人"
   ],
   "repository": {
     "type": "git",

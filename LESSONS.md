@@ -63,3 +63,13 @@
 **根因**：iLink 协议对 bot 身份的群事件投递限制在腾讯侧。
 
 **修复**：只按私聊设计；`dm_policy`/allowlist 管控，不依赖群消息。
+
+## 2026-08-06 npm Trusted Publishing 在 CI 上 404，根因是 npm 版本不够
+
+**一句话**：CI `npm publish` 报 404 "not in this registry"，根因是 runner 上 Node 22.x 捆绑的 npm 10.9.8 低于 Trusted Publishing 要求的 npm ≥ 11.5.1。
+
+**现象**：provenance（"Signed provenance statement"）签名成功，但 PUT 注册表 404。
+
+**根因**：npm CLI 版本 < 11.5.1 时无法自动做 OIDC 认证，以未认证身份发布。provenance 签名走 sigstore，独立于 npm 认证，所以"签名成功"是假象。
+
+**修复**：publish 前加 `npm install -g npm@latest`；详细排查见 TROUBLESHOOTING.md。另注意 `npm whoami` 不反映 OIDC 状态、Trusted Publishing 无需 `auth-type: oidc`。
