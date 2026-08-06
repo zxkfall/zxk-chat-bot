@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import "./cli-env.js";
 import { confirm, input, select } from "@inquirer/prompts";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
